@@ -25,9 +25,9 @@ def kafka_produce(data_dict, timestamp):
     global key
     for name, value in data_dict.items():
         json_temp = {
-            "name" : name, 
-            "value" : value,
-            "timestamp" : str(timestamp)
+            "m_name" : name, 
+            "m_value" : value,
+            "m_timestamp" : str(timestamp)
         }
         # cast to json
         msg = json.dumps(json_temp)
