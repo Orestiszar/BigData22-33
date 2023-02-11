@@ -1,8 +1,7 @@
 import os
 
-# from pyflink.datastream import StreamExecutionEnvironment
-# from pyflink.table import StreamTableEnvironment, EnvironmentSettings
-
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.table import StreamTableEnvironment, EnvironmentSettings
 from pyflink.common import Row
 from pyflink.common.serialization import JsonRowDeserializationSchema, JsonRowSerializationSchema
 from pyflink.common.typeinfo import Types
