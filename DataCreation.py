@@ -32,7 +32,7 @@ def kafka_produce(data_dict, timestamp):
         # cast to json
         msg = json.dumps(json_temp)
     
-        producer.produce('test_topic', key=str(key), value=msg, callback=kafka_callback)
+        producer.produce('quickstart', key=str(key), value=msg, callback=kafka_callback)
         # TODO: check with callback if the message was really delivered
         producer.poll(2)
         key += 1
@@ -80,7 +80,12 @@ wtotenergy=0
 secondcounter=0
 
 # create the producer used for kafka
-producer = Producer(conf)
+conf_local = {
+    'bootstrap.servers':"localhost:9092",
+    'client.id' : socket.gethostname() + "_producer"
+}
+
+producer = Producer(conf_local)
 
 # key counter for kafka (used just in case)
 key = 0
