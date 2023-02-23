@@ -1,19 +1,22 @@
 package myflink;
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.util.Collector;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
-
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.connector.kafka.sink.KafkaSink;
-import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
+import org.apache.flink.util.Collector;
+
+import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+
+import java.io.IOException;
+
 
 public class StreamingJob {
 
@@ -21,31 +24,22 @@ public class StreamingJob {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        String[] brokers = new String[1];
-        brokers[0] = "localhost:9092";
+        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
-        KafkaSource<String> source = KafkaSource.<String>builder()
-            .setBootstrapServers("localhost:9092")
-            .setTopics("quickstart")
-            .setGroupId("my-group-flink")
-            .setStartingOffsets(OffsetsInitializer.earliest())
-            .setValueOnlyDeserializer(new SimpleStringSchema())
-            .build();
-        
+        KafkaSource<Row> source = KafkaSource.<Row>builder()
+                .setBootstrapServers("localhost:9092")
+                .setTopics("quickstart")
+                .setGroupId("my-group-flink")
+                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setValueOnlyDeserializer(new RowDeserializer())
+                .build();
+        DataStream<Row> dataStream = env.fromSource(source,WatermarkStrategy.noWatermarks(),"Kakfa Source");
 
-        // DataStream<Tuple2<String, Integer>> dataStream = env
-        //         // .socketTextStream("localhost", 9000)
-        //         .addSource(source)
-        //         .flatMap(new Splitter())
-        //         .keyBy(value -> value.f0)
-        //         .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-        //         .sum(1);
-        
-        DataStream<String> dataStream = env.fromSource(source,WatermarkStrategy.noWatermarks(),"Kakfa Source");
 
-        dataStream.print();
+        tableEnv.createTemporaryView("test_table", dataStream);
+        tableEnv.executeSql("SELECT * FROM test_table").print();
 
-        env.execute("Window WordCount");
+        env.execute("Simple SQL qqqqqqqquery");
     }
 
     public static class Splitter implements FlatMapFunction<String, Tuple2<String, Integer>> {

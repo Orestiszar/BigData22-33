@@ -1,2 +1,4 @@
-myflink/StreamingJob.class
-myflink/StreamingJob$Splitter.class
+myflink\RowDeserializer.class
+myflink\StreamingJob$Splitter.class
+myflink\StreamingJob.class
+myflink\Utils.class
