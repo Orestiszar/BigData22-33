@@ -1,0 +1,2 @@
+# remove all jars from target
+target/*.jar
