@@ -32,7 +32,7 @@ def kafka_produce(data_dict, timestamp):
         # cast to json
         msg = json.dumps(json_temp)
     
-        producer.produce('quickstart', key=str(key), value=msg, callback=kafka_callback)
+        producer.produce('quickstart-new', key=str(key), value=msg, callback=kafka_callback)
         # TODO: check with callback if the message was really delivered
         producer.poll(2)
         key += 1

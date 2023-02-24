@@ -1,2 +1,3 @@
 # remove all jars from target
-target/*.jar
+my-flink-project/target/my-flink-project-0.1.jar
+*.jar
