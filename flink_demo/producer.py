@@ -5,7 +5,7 @@ import logging
 import random
 import time
 import sys
-
+import happybase
 
 from confluent_kafka import Producer
 

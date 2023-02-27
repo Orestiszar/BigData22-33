@@ -2,17 +2,12 @@ import random
 import datetime
 from sqlite3 import Timestamp
 import time
-from matplotlib.font_manager import json_dump
 import numpy as np
 import json
 
 # kafka imports and config
 from confluent_kafka import Producer
 import socket
-
-from pydantic import KafkaDsn
-from kafka_test.kafka_config import conf
-conf['client.id'] = socket.gethostname() + "_data_producer"
 
 # used for acknowledgment if the msg was produced succesfully 
 def kafka_callback(err, msg):

@@ -1,7 +1,9 @@
 import os
+import subprocess
 
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table import StreamTableEnvironment, EnvironmentSettings
+import pandas as pd
 
 
 def main():
@@ -19,26 +21,27 @@ def main():
 
     # add kafka connector dependency
     kafka_jar = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                            'flink-sql-connector-kafka_2.12-1.13.6.jar')
-
+                            'flink-sql-connector-kafka_2.12-1.13.6.jar')                        
     tbl_env.get_config()\
             .get_configuration()\
             .set_string("pipeline.jars", "file://{}".format(kafka_jar))
+           
+
 
     #######################################################################
     # Create Kafka Source Table with DDL
     #######################################################################
     src_ddl = """
-        CREATE TABLE sales_usd (
-            seller_id VARCHAR,
-            amount_usd DOUBLE,
-            sale_ts BIGINT,
+        CREATE TABLE sensor_data (
+            m_name VARCHAR,
+            m_value DOUBLE,
+            m_timestamp TIMESTAMP,
             proctime AS PROCTIME()
         ) WITH (
             'connector' = 'kafka',
-            'topic' = 'sales-usd',
+            'topic' = 'quickstart-new',
             'properties.bootstrap.servers' = 'localhost:9092',
-            'properties.group.id' = 'sales-usd',
+            'properties.group.id' = 'sensor_data_group',
             'format' = 'json'
         )
     """
@@ -46,7 +49,7 @@ def main():
     tbl_env.execute_sql(src_ddl)
 
     # create and initiate loading of source Table
-    tbl = tbl_env.from_path('sales_usd')
+    tbl = tbl_env.from_path('sensor_data')
 
     print('\nSource Schema')
     tbl.print_schema()
@@ -56,14 +59,24 @@ def main():
     #####################################################################
     sql = """
         SELECT
-          seller_id,
-          TUMBLE_END(proctime, INTERVAL '60' SECONDS) AS window_end,
-          SUM(amount_usd) * 0.85 AS window_sales
-        FROM sales_usd
+          m_name,
+          TUMBLE_END(proctime, INTERVAL '4' SECONDS) AS window_end,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
         GROUP BY
-          TUMBLE(proctime, INTERVAL '60' SECONDS),
-          seller_id
+          TUMBLE(proctime, INTERVAL '4' SECONDS),
+          m_name
     """
+
+    # sql_sensor_TH1 = f"""
+    #     SELECT
+    #       m_name,
+    #       AVERAGE(m_value) AS daily_average_TH1,
+    #       m_timestamp,
+    #       TUMBLE_END(proctime, INTERVAL '60' SECONDS) AS window_end,
+    #     FROM sensor_data
+    #     WHERE m_name = 'TH1' AND 
+    # """
     revenue_tbl = tbl_env.sql_query(sql)
 
     print('\nProcess Sink Schema')
@@ -73,10 +86,10 @@ def main():
     # Create Kafka Sink Table
     ###############################################################
     sink_ddl = """
-        CREATE TABLE sales_euros (
-            seller_id VARCHAR,
+        CREATE TABLE daily_values (
+            m_name VARCHAR,
             window_end TIMESTAMP(3),
-            window_sales DOUBLE
+            window_daily_values DOUBLE
         ) WITH (
             'connector' = 'kafka',
             'topic' = 'sales-euros',
@@ -87,9 +100,9 @@ def main():
     tbl_env.execute_sql(sink_ddl)
 
     # write time windowed aggregations to sink table
-    revenue_tbl.execute_insert('sales_euros').wait()
+    revenue_tbl.execute_insert('daily_values').wait()
 
-    tbl_env.execute('windowed-sales-euros')
+    tbl_env.execute('aggregated-daily-values')
 
 
 if __name__ == '__main__':
