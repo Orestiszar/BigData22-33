@@ -38,14 +38,10 @@ def basic_consume_loop(consumer, topics):
                 global table
                 temp_json = json.loads(msg.value())
 
-                batch.put(f'example-consumer_{counter}_{batch_size}', {b'cf:m_name': temp_json['m_name'],
-                                    b'cf:window_daily_values': str(temp_json['window_end'])})
+                table.put(f'example-consumer_{counter}_{batch_size}', {b'cf:m_name': temp_json['window_end'],
+                                    b'cf:window_daily_values': str(temp_json['window_daily_values'])})
 
-                batch_size += 1
-                if batch_size == 6:
-                    batch.send()
-                    counter += 1
-                    batch_size == 0
+                counter += 1
 
     finally:
         # Close down consumer to commit final offsets.
