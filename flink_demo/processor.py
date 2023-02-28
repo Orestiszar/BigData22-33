@@ -2,7 +2,9 @@ import os
 import subprocess
 
 from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.table import StreamTableEnvironment, EnvironmentSettings
+from pyflink.table import StreamTableEnvironment, EnvironmentSettings, DataTypes
+from pyflink.table.udf import udf
+
 import pandas as pd
 
 
@@ -12,7 +14,6 @@ def main():
 
     settings = EnvironmentSettings.new_instance()\
                       .in_streaming_mode()\
-                      .use_blink_planner()\
                       .build()
 
     # create table environment
@@ -26,7 +27,6 @@ def main():
             .get_configuration()\
             .set_string("pipeline.jars", "file://{}".format(kafka_jar))
            
-
 
     #######################################################################
     # Create Kafka Source Table with DDL
@@ -57,27 +57,39 @@ def main():
     #####################################################################
     # Define Tumbling Window Aggregate Calculation (Seller Sales Per Minute)
     #####################################################################
+    #          (SELECT m_timestamp FROM sensor_data LIMIT 1) as my_timestamp,
+
+
     sql = """
         SELECT
           m_name,
-          TUMBLE_END(proctime, INTERVAL '4' SECONDS) AS window_end,
+          TUMBLE_END(proctime, INTERVAL '96' SECONDS) AS window_end,
           SUM(m_value) AS window_daily_values
         FROM sensor_data
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+
+
+    # """
+    # SELECT m_timestamp
+    # FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY m_name ORDER BY proctime ASC) AS rownum FROM sensor_data) WHERE rownum = 1;
+    # """
+
+    sql_sensor_TH1 = """
+        SELECT
+          m_name,
+          MIN(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'TH1'
         GROUP BY
           TUMBLE(proctime, INTERVAL '4' SECONDS),
           m_name
     """
 
-    # sql_sensor_TH1 = f"""
-    #     SELECT
-    #       m_name,
-    #       AVERAGE(m_value) AS daily_average_TH1,
-    #       m_timestamp,
-    #       TUMBLE_END(proctime, INTERVAL '60' SECONDS) AS window_end,
-    #     FROM sensor_data
-    #     WHERE m_name = 'TH1' AND 
-    # """
-    revenue_tbl = tbl_env.sql_query(sql)
+    revenue_tbl = tbl_env.sql_query(sql_sensor_TH1)
 
     print('\nProcess Sink Schema')
     revenue_tbl.print_schema()
@@ -88,7 +100,7 @@ def main():
     sink_ddl = """
         CREATE TABLE daily_values (
             m_name VARCHAR,
-            window_end TIMESTAMP(3),
+            the_timestamp TIMESTAMP,
             window_daily_values DOUBLE
         ) WITH (
             'connector' = 'kafka',
