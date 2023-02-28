@@ -12,22 +12,22 @@ def connect_to_database():
     return conn
 
 
-def get_dummy_sum():
+# gets raw and aggr data
+def get_data(table_name):
     conn = connect_to_database()
 
     data = []
     try:
-        table = conn.table('test')
+        table = conn.table(table_name)
         
         for key, val in table.scan():
             # CHANGE LATER USING mNAME AS TIME
             key = key.decode('utf-8').replace('cf:','')
-            value = val[b'cf:window_daily_values'].decode('utf-8')
-            time = val[b'cf:m_name'].decode('utf-8')
+            value = val[b'cf:value'].decode('utf-8')
+            time = val[b'cf:datetime'].decode('utf-8')
 
             data.append(
                 {
-                "sensor-id":"dummy_data",
                 "time":time,
                 "value":value
                 })

@@ -6,14 +6,25 @@ import json
 
 local_conf = {
     'bootstrap.servers':"localhost:9092",
-    'client.id':socket.gethostname() + "_consumer",
-    'group.id':'test'
+    'client.id':socket.gethostname() + "_consumer_aggr",
+    'group.id':'happybase_aggr'
 }
 
 consumer = Consumer(local_conf)
 connection = happybase.Connection('localhost', 9090)
-table = connection.table('test')
-batch = table.batch(transaction=True)
+
+tables = {
+        "TH1" : connection.table('TH1_aggr'),
+        "TH2" : connection.table('TH2_aggr'),
+        "HVAC1" : connection.table('HVAC1_aggr'),
+        "HVAC2" : connection.table('HVAC2_aggr'),
+        "MiAC1" : connection.table('MiAC1_aggr'),
+        "MiAC2" : connection.table('MiAC2_aggr'),
+        "Etot" : connection.table('Etot_aggr'),
+        "MOV1" : connection.table('MOV1_aggr'),
+        "W1" : connection.table('W1_aggr'),
+        "Wtot" : connection.table('Wtot_aggr'),
+}
 
 #TODO:(?)implement a way to safely stop the consumer (finally scope) 
 def basic_consume_loop(consumer, topics):
@@ -38,8 +49,9 @@ def basic_consume_loop(consumer, topics):
                 global table
                 temp_json = json.loads(msg.value())
 
-                table.put(f'example-consumer_{counter}_{batch_size}', {b'cf:m_name': temp_json['window_end'],
-                                    b'cf:window_daily_values': str(temp_json['window_daily_values'])})
+                tables[temp_json['m_name']].put(f'TH1_{counter}', {b'cf:name': temp_json['m_name'],
+                                b'cf:datetime': str(temp_json['m_timestamp']),
+                                b'cf:value' : str(temp_json['m_value'])})
 
                 counter += 1
 

@@ -15,10 +15,31 @@ app.make_response("Hello there")
 def hello_world():
     return 'Hello World!'
 
-# we will put as targets the metrics we want to check
+# we will put as targets the metrics we want to check (raws and aggrs)
 @app.route('/search', methods=['POST'])
 def search():
-  return jsonify(['my_series', 'another_series'])
+  return jsonify([
+    'TH1_raw',
+    'TH2_raw',
+    'HVAC1_raw',
+    'HVAC2_raw',
+    'MiAC1_raw',
+    'MiAC2_raw',
+    'Etot_raw',
+    'MOV1_raw',
+    'W1_raw',
+    'Wtot_raw',
+    'TH1_aggr',
+    'TH2_aggr',
+    'HVAC1_aggr',
+    'HVAC2_aggr',
+    'MiAC1_aggr',
+    'MiAC2_aggr',
+    'Etot_aggr',
+    'MOV1_aggr',
+    'W1_aggr',
+    'Wtot_aggr',
+  ])
 
 @app.route('/query', methods=['POST'])
 def query():
@@ -26,7 +47,7 @@ def query():
     result = []
 
     # get result from databse-api
-    results_db = database_api_test.get_dummy_sum()
+    results_db = database_api_test.get_data(req['targets'][0]['target'])
 
     data = [
         {
