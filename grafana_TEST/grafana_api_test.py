@@ -35,10 +35,8 @@ def search():
     'HVAC2_aggr',
     'MiAC1_aggr',
     'MiAC2_aggr',
-    'Etot_aggr',
     'MOV1_aggr',
-    'W1_aggr',
-    'Wtot_aggr',
+    'W1_aggr'
   ])
 
 @app.route('/query', methods=['POST'])
@@ -52,8 +50,7 @@ def query():
     data = [
         {
             "target": req['targets'][0]['target'],
-            "datapoints": [
-            ]
+            "datapoints": []
         }
     ]
     for result in results_db:

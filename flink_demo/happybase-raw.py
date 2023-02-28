@@ -52,7 +52,7 @@ def basic_consume_loop(consumer, topics):
                 global table
                 temp_json = json.loads(msg.value())
                 
-                tables[temp_json['m_name']].put(f'TH1_{counter}', {b'cf:name': temp_json['m_name'],
+                tables[temp_json['m_name']].put(f'{temp_json["m_name"]}_{counter}', {b'cf:name': temp_json['m_name'],
                                 b'cf:datetime': str(temp_json['m_timestamp']),
                                 b'cf:value' : str(temp_json['m_value'])})
 
@@ -62,4 +62,4 @@ def basic_consume_loop(consumer, topics):
         # Close down consumer to commit final offsets.
         consumer.close()
 
-basic_consume_loop(consumer, ['quickstart-new'])
+basic_consume_loop(consumer, ['output_raw'])

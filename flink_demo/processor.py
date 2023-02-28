@@ -39,7 +39,7 @@ def main():
             proctime AS PROCTIME()
         ) WITH (
             'connector' = 'kafka',
-            'topic' = 'quickstart-new',
+            'topic' = 'input',
             'properties.bootstrap.servers' = 'localhost:9092',
             'properties.group.id' = 'sensor_data_group',
             'format' = 'json'
@@ -55,47 +55,132 @@ def main():
     tbl.print_schema()
 
     #####################################################################
-    # Define Tumbling Window Aggregate Calculation (Seller Sales Per Minute)
+    #                           Define Aggregations
     #####################################################################
-    #          (SELECT m_timestamp FROM sensor_data LIMIT 1) as my_timestamp,
 
-
-    sql = """
+    sql_sensor_TH1 = """
         SELECT
           m_name,
-          TUMBLE_END(proctime, INTERVAL '96' SECONDS) AS window_end,
-          SUM(m_value) AS window_daily_values
+          MAX(m_timestamp) as the_timestamp,
+          AVG(m_value) AS window_daily_values
         FROM sensor_data
+        WHERE m_name = 'TH1'
         GROUP BY
           TUMBLE(proctime, INTERVAL '96' SECONDS),
           m_name
     """
 
-
-    # """
-    # SELECT m_timestamp
-    # FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY m_name ORDER BY proctime ASC) AS rownum FROM sensor_data) WHERE rownum = 1;
-    # """
-
-    sql_sensor_TH1 = """
+    sql_sensor_TH2 = """
         SELECT
           m_name,
-          MIN(m_timestamp) as the_timestamp,
-          SUM(m_value) AS window_daily_values
+          MAX(m_timestamp) as the_timestamp,
+          AVG(m_value) AS window_daily_values
         FROM sensor_data
-        WHERE m_name = 'TH1'
+        WHERE m_name = 'TH2'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '4' SECONDS),
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
           m_name
     """
 
-    revenue_tbl = tbl_env.sql_query(sql_sensor_TH1)
+    sql_sensor_HVAC1 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'HVAC1'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+    sql_sensor_HVAC2 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'HVAC2'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+    sql_sensor_W1 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'W1'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+    
+    sql_sensor_MIAC1 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'MiAC1'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+    
+    sql_sensor_MIAC2 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'MiAC2'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
 
-    print('\nProcess Sink Schema')
-    revenue_tbl.print_schema()
+    sql_sensor_MOV1 = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          SUM(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'MOV1'
+        GROUP BY
+          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          m_name
+    """
+
+    sql_raw_data = """
+        SELECT
+          m_name,
+          m_timestamp,
+          m_value
+        FROM sensor_data
+        """
+
 
     ###############################################################
-    # Create Kafka Sink Table
+    #        EXECUTE THE QUERIES AND SAVE THEM TO VARIABLES
+    ###############################################################
+
+
+    TH1_tbl = tbl_env.sql_query(sql_sensor_TH1)
+    TH2_tbl = tbl_env.sql_query(sql_sensor_TH2)
+    HVAC1_tbl = tbl_env.sql_query(sql_sensor_HVAC1)
+    HVAC2_tbl = tbl_env.sql_query(sql_sensor_HVAC2)
+    MIAC1_tbl = tbl_env.sql_query(sql_sensor_MIAC1)
+    MIAC2_tbl = tbl_env.sql_query(sql_sensor_MIAC2)
+    W1_tbl = tbl_env.sql_query(sql_sensor_W1)
+    MOV1_tbl = tbl_env.sql_query(sql_sensor_MOV1)
+    raw_tbl = tbl_env.sql_query(sql_raw_data)
+
+    print('\nProcess Sink Schema')
+    # revenue_tbl.print_schema()
+
+    ###############################################################
+    # Create The Kafka Sink Tables
     ###############################################################
     sink_ddl = """
         CREATE TABLE daily_values (
@@ -104,15 +189,58 @@ def main():
             window_daily_values DOUBLE
         ) WITH (
             'connector' = 'kafka',
-            'topic' = 'sales-euros',
+            'topic' = 'output_aggr',
             'properties.bootstrap.servers' = 'localhost:9092',
             'format' = 'json'
         )
     """
     tbl_env.execute_sql(sink_ddl)
 
+    sink_ddl_raw = """
+        CREATE TABLE daily_values_raw (
+            m_name VARCHAR,
+            m_timestamp TIMESTAMP,
+            m_value DOUBLE
+        ) WITH (
+            'connector' = 'kafka',
+            'topic' = 'output_raw',
+            'properties.bootstrap.servers' = 'localhost:9092',
+            'format' = 'json'
+        )
+    """
+    tbl_env.execute_sql(sink_ddl_raw)
+
+    statement_set = tbl_env.create_statement_set()
+
+    # emit the "table" object to the "first_sink_table"
+    statement_set.add_insert("daily_values", TH1_tbl)
+    statement_set.add_insert("daily_values_raw", raw_tbl)
+
+    # emit the "simple_source" to the "second_sink_table" via a insert sql query
+    statement_set.add_insert("daily_values", TH2_tbl)
+    statement_set.add_insert("daily_values", HVAC1_tbl)
+    statement_set.add_insert("daily_values", HVAC2_tbl)
+    statement_set.add_insert("daily_values", MIAC1_tbl)
+    statement_set.add_insert("daily_values", MIAC2_tbl)
+    statement_set.add_insert("daily_values", W1_tbl)
+    statement_set.add_insert("daily_values", MOV1_tbl)
+
+    # execute the statement set
+    statement_set.execute().wait()
+
+
+
     # write time windowed aggregations to sink table
-    revenue_tbl.execute_insert('daily_values').wait()
+    # TH1_tbl.execute_insert('daily_values')
+    # TH2_tbl.execute_insert('daily_values')
+    # HVAC1_tbl.execute_insert('daily_values')
+    # HVAC2_tbl.execute_insert('daily_values')
+    # MIAC1_tbl.execute_insert('daily_values')
+    # MIAC2_tbl.execute_insert('daily_values')
+    # W1_tbl.execute_insert('daily_values')
+    # MOV1_tbl.execute_insert('daily_values')
+    # raw_tbl.execute_insert('daily_values_raw').wait()
+
 
     tbl_env.execute('aggregated-daily-values')
 

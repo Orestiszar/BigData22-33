@@ -11,27 +11,13 @@ local_conf = {
 }
 
 consumer = Consumer(local_conf)
-connection = happybase.Connection('localhost', 9090)
 
-tables = {
-        "TH1" : connection.table('TH1_aggr'),
-        "TH2" : connection.table('TH2_aggr'),
-        "HVAC1" : connection.table('HVAC1_aggr'),
-        "HVAC2" : connection.table('HVAC2_aggr'),
-        "MiAC1" : connection.table('MiAC1_aggr'),
-        "MiAC2" : connection.table('MiAC2_aggr'),
-        "Etot" : connection.table('Etot_aggr'),
-        "MOV1" : connection.table('MOV1_aggr'),
-        "W1" : connection.table('W1_aggr'),
-        "Wtot" : connection.table('Wtot_aggr'),
-}
 
 #TODO:(?)implement a way to safely stop the consumer (finally scope) 
 def basic_consume_loop(consumer, topics):
     try:
         consumer.subscribe(topics)
 
-        batch_size = 0
         counter = 0
         while True:
             msg = consumer.poll(timeout=1.0)
@@ -46,12 +32,19 @@ def basic_consume_loop(consumer, topics):
                     raise KafkaException(msg.error())
             else:
                 print(f'Counter: {counter} || Value: {str(msg.value())}')
-                global table
+
                 temp_json = json.loads(msg.value())
 
-                tables[temp_json['m_name']].put(f'TH1_{counter}', {b'cf:name': temp_json['m_name'],
-                                b'cf:datetime': str(temp_json['m_timestamp']),
-                                b'cf:value' : str(temp_json['m_value'])})
+                connection = happybase.Connection('localhost', 9090)
+
+                table = connection.table(temp_json['m_name'] + '_aggr')
+
+                try:
+                    table.put(f'{temp_json["m_name"]}_{counter}', {b'cf:name': temp_json['m_name'],
+                                    b'cf:datetime': str(temp_json['the_timestamp']),
+                                    b'cf:value' : str(temp_json['window_daily_values'])})
+                except:
+                    print(f'EXCEPTION IN : Counter: {counter} || Value: {str(msg.value())}')
 
                 counter += 1
 
@@ -59,4 +52,4 @@ def basic_consume_loop(consumer, topics):
         # Close down consumer to commit final offsets.
         consumer.close()
 
-basic_consume_loop(consumer, ['sales-euros'])
+basic_consume_loop(consumer, ['output_aggr'])
