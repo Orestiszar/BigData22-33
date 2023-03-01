@@ -16,7 +16,7 @@ def kafka_callback(err, msg):
     else:
         print("Message produced: %s" % (str(msg.value())))
 
-def kafka_produce(data_dict, timestamp):
+def kafka_produce(data_dict, timestamp, mytopic='input'):
     global key
     for name, value in data_dict.items():
         json_temp = {
@@ -27,7 +27,7 @@ def kafka_produce(data_dict, timestamp):
         # cast to json
         msg = json.dumps(json_temp)
     
-        producer.produce('input', key=str(key), value=msg, callback=kafka_callback)
+        producer.produce(mytopic, key=str(key), value=msg, callback=kafka_callback)
         # TODO: check with callback if the message was really delivered
         producer.poll(2)
         key += 1
@@ -59,11 +59,6 @@ def create_data_1day():
     wtot = np.random.uniform(-10,10)
     wtotenergy += (100+wtot)
 
-
-#TODO: remove(?)
-def MOV1_old():
-    return np.random.uniform(0,1)
-
 # used for picking random samples during the day(?)
 moving_list = [1 if i < 5 else 0 for i in range(96)]
 random.shuffle(moving_list)
@@ -93,20 +88,20 @@ while(1):
         kafka_produce({'MOV1' : 1}, tempdate)
 
     # produce required data at the end of each day
-    if(secondcounter%96 == 0 and secondcounter != 0):
+    if(secondcounter%95 == 0 and secondcounter != 0):
         create_data_1day()
         
         random.shuffle(moving_list)
         kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, date)
         
         
-    # if(secondcounter%20==0 and secondcounter!=0):
-    #     tempdate_mov = date-datetime.timedelta(days=2)
-    #     print(MOV1_old(),tempdate_mov)
+    if(secondcounter%20==0 and secondcounter!=0):
+        tempdate_mov = date-datetime.timedelta(days=2)
+        kafka_produce({'W1':np.random.uniform(0,1)}, tempdate_mov)
 
-    # if(secondcounter%120==0 and secondcounter!=0):
-    #     tempdate_mov = date-datetime.timedelta(days=10)
-    #     print(MOV1_old(),tempdate_mov)
+    if(secondcounter%120==0 and secondcounter!=0):
+        tempdate_mov = date-datetime.timedelta(days=10)
+        kafka_produce({'W1':np.random.uniform(0,1)}, tempdate_mov, mytopic='input_late')
 
     # produce data for each 15 min
     kafka_produce(create_data_15min(), date)
