@@ -64,54 +64,53 @@ def create_data_1day():
 def MOV1_old():
     return np.random.uniform(0,1)
 
-def create_data():
-    # used for picking random samples during the day(?)
-    moving_list = [1 if i < 5 else 0 for i in range(96)]
-    random.shuffle(moving_list)
+# used for picking random samples during the day(?)
+moving_list = [1 if i < 5 else 0 for i in range(96)]
+random.shuffle(moving_list)
 
-    # init metric values and date
-    date=datetime.datetime(2023,1,1)
-    etotenergy=0
-    wtotenergy=0
-    secondcounter=0
+# init metric values and date
+date=datetime.datetime(2023,1,1)
+etotenergy=0
+wtotenergy=0
+secondcounter=0
 
-    # create the producer used for kafka
-    conf_local = {
-        'bootstrap.servers':"localhost:9092",
-        'client.id' : socket.gethostname() + "_producer"
-    }
+# create the producer used for kafka
+conf_local = {
+    'bootstrap.servers':"localhost:9092",
+    'client.id' : socket.gethostname() + "_producer"
+}
 
-    producer = Producer(conf_local)
+producer = Producer(conf_local)
 
-    # key counter for kafka (used just in case)
-    key = 0
+# key counter for kafka (used just in case)
+key = 0
 
-    while(1):
-        # produce if it is time for MOV1
-        if(moving_list[secondcounter%96]==1):
-            tempdate = date + datetime.timedelta(minutes=random.randint(0,15),seconds=random.randint(0,60))
-            
-            kafka_produce({'MOV1' : 1}, tempdate)
-
-        # produce required data at the end of each day
-        if(secondcounter%96 == 0 and secondcounter != 0):
-            create_data_1day()
-            
-            random.shuffle(moving_list)
-            kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, date)
-            
-            
-        # if(secondcounter%20==0 and secondcounter!=0):
-        #     tempdate_mov = date-datetime.timedelta(days=2)
-        #     print(MOV1_old(),tempdate_mov)
-
-        # if(secondcounter%120==0 and secondcounter!=0):
-        #     tempdate_mov = date-datetime.timedelta(days=10)
-        #     print(MOV1_old(),tempdate_mov)
-
-        # produce data for each 15 min
-        kafka_produce(create_data_15min(), date)
-        date += datetime.timedelta(minutes=15)
+while(1):
+    # produce if it is time for MOV1
+    if(moving_list[secondcounter%96]==1):
+        tempdate = date + datetime.timedelta(minutes=random.randint(0,15),seconds=random.randint(0,60))
         
-        secondcounter+=1
-        time.sleep(1)
+        kafka_produce({'MOV1' : 1}, tempdate)
+
+    # produce required data at the end of each day
+    if(secondcounter%96 == 0 and secondcounter != 0):
+        create_data_1day()
+        
+        random.shuffle(moving_list)
+        kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, date)
+        
+        
+    # if(secondcounter%20==0 and secondcounter!=0):
+    #     tempdate_mov = date-datetime.timedelta(days=2)
+    #     print(MOV1_old(),tempdate_mov)
+
+    # if(secondcounter%120==0 and secondcounter!=0):
+    #     tempdate_mov = date-datetime.timedelta(days=10)
+    #     print(MOV1_old(),tempdate_mov)
+
+    # produce data for each 15 min
+    kafka_produce(create_data_15min(), date)
+    date += datetime.timedelta(minutes=15)
+    
+    secondcounter+=1
+    time.sleep(1)

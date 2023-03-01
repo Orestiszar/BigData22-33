@@ -12,7 +12,7 @@ local_conf = {
 }
 
 consumer = Consumer(local_conf)
-connection = happybase.Connection('localhost', 9090)
+connection = happybase.Connection('localhost', 9090, timeout=100000)
 
 
 # connect to all raw tables
@@ -27,6 +27,8 @@ tables = {
         "MOV1" : connection.table('MOV1_raw'),
         "W1" : connection.table('W1_raw'),
         "Wtot" : connection.table('Wtot_raw'),
+        "Etot_DailyDiff": connection.table('Etot_DailyDiff'),
+        "Wtot_DailyDiff": connection.table('Wtot_DailyDiff')
 }
 
 #TODO:(?)implement a way to safely stop the consumer (finally scope) 
@@ -36,6 +38,8 @@ def basic_consume_loop(consumer, topics):
 
 
         counter = 0
+        etot_prev_sum = 0
+        wtot_prev_sum = 0
         while True:
             msg = consumer.poll(timeout=1.0)
             if msg is None: continue
@@ -57,6 +61,21 @@ def basic_consume_loop(consumer, topics):
                                 b'cf:value' : str(temp_json['m_value'])})
 
                 counter += 1
+
+
+                # add to aggr daily diff for Etot
+                if(temp_json['m_name'] == 'Etot'):
+                    tables[temp_json['m_name']+'_DailyDiff'].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
+                                b'cf:datetime': str(temp_json['m_timestamp']),
+                                b'cf:value' : str(float(temp_json['m_value']) - etot_prev_sum)})
+                    etot_prev_sum += float(temp_json['m_value'])
+                
+                # add to aggr daily diff for Wtot
+                if(temp_json['m_name'] == 'Wtot'):
+                    tables[temp_json['m_name']+'_DailyDiff'].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
+                                b'cf:datetime': str(temp_json['m_timestamp']),
+                                b'cf:value' : str(float(temp_json['m_value']) - wtot_prev_sum)})
+                    wtot_prev_sum += float(temp_json['m_value'])
 
     finally:
         # Close down consumer to commit final offsets.

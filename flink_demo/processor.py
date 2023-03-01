@@ -6,8 +6,6 @@ from pyflink.table import StreamTableEnvironment, EnvironmentSettings, DataTypes
 from pyflink.table.udf import udf
 
 import pandas as pd
-from threading import Thread
-import DataCreation
 
 
 def main():
@@ -37,8 +35,8 @@ def main():
         CREATE TABLE sensor_data (
             m_name VARCHAR,
             m_value DOUBLE,
-            m_timestamp TIMESTAMP,
-            proctime AS PROCTIME()
+            m_timestamp TIMESTAMP(3),
+            WATERMARK FOR m_timestamp AS m_timestamp
         ) WITH (
             'connector' = 'kafka',
             'topic' = 'input',
@@ -48,9 +46,7 @@ def main():
         )
     """
 
-    data_creation_thread = Thread(target = DataCreation.create_data)
     tbl_env.execute_sql(src_ddl)
-    data_creation_thread.start()
 
     # create and initiate loading of source Table
     tbl = tbl_env.from_path('sensor_data')
@@ -70,7 +66,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'TH1'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
 
@@ -82,7 +78,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'TH2'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
 
@@ -94,7 +90,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'HVAC1'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
     sql_sensor_HVAC2 = """
@@ -105,7 +101,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'HVAC2'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
     sql_sensor_W1 = """
@@ -116,7 +112,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'W1'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
     
@@ -128,7 +124,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'MiAC1'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
     
@@ -140,7 +136,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'MiAC2'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
 
@@ -152,7 +148,7 @@ def main():
         FROM sensor_data
         WHERE m_name = 'MOV1'
         GROUP BY
-          TUMBLE(proctime, INTERVAL '96' SECONDS),
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
           m_name
     """
 
@@ -216,11 +212,8 @@ def main():
 
     statement_set = tbl_env.create_statement_set()
 
-    # emit the "table" object to the "first_sink_table"
-    statement_set.add_insert("daily_values", TH1_tbl)
     statement_set.add_insert("daily_values_raw", raw_tbl)
-
-    # emit the "simple_source" to the "second_sink_table" via a insert sql query
+    statement_set.add_insert("daily_values", TH1_tbl)
     statement_set.add_insert("daily_values", TH2_tbl)
     statement_set.add_insert("daily_values", HVAC1_tbl)
     statement_set.add_insert("daily_values", HVAC2_tbl)
@@ -231,21 +224,6 @@ def main():
 
     # execute the statement set
     statement_set.execute().wait()
-
-
-
-    # write time windowed aggregations to sink table
-    # TH1_tbl.execute_insert('daily_values')
-    # TH2_tbl.execute_insert('daily_values')
-    # HVAC1_tbl.execute_insert('daily_values')
-    # HVAC2_tbl.execute_insert('daily_values')
-    # MIAC1_tbl.execute_insert('daily_values')
-    # MIAC2_tbl.execute_insert('daily_values')
-    # W1_tbl.execute_insert('daily_values')
-    # MOV1_tbl.execute_insert('daily_values')
-    # raw_tbl.execute_insert('daily_values_raw').wait()
-
-
     tbl_env.execute('aggregated-daily-values')
 
 

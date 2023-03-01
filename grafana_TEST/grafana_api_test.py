@@ -36,7 +36,9 @@ def search():
     'MiAC1_aggr',
     'MiAC2_aggr',
     'MOV1_aggr',
-    'W1_aggr'
+    'W1_aggr',
+    'Etot_DailyDiff',
+    'Wtot_DailyDiff'
   ])
 
 @app.route('/query', methods=['POST'])
