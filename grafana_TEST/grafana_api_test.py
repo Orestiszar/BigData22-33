@@ -38,7 +38,9 @@ def search():
     'MOV1_aggr',
     'W1_aggr',
     'Etot_DailyDiff',
-    'Wtot_DailyDiff'
+    'Wtot_DailyDiff',
+    'Etot_AggDayRest',
+    'Wtot_AggDayRest'
   ])
 
 @app.route('/query', methods=['POST'])
@@ -56,6 +58,7 @@ def query():
         }
     ]
     for result in results_db:
+        # if(convert_to_time_ms(time_start) <= convert_to_time_ms(result["time"]) and convert_to_time_ms(result["time"]) <= convert_to_time_ms(time_end)):
         data[0]["datapoints"].append([float(result["value"]), convert_to_time_ms(result["time"])])
 
 

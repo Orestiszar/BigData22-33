@@ -4,6 +4,8 @@ import socket
 import happybase
 import json
 
+from datetime import datetime
+
 local_conf = {
     'bootstrap.servers':"localhost:9092",
     'client.id':socket.gethostname() + "_consumer_aggr",
@@ -19,6 +21,8 @@ def basic_consume_loop(consumer, topics):
         consumer.subscribe(topics)
 
         counter = 0
+        etot_prev_sum = 0
+        wtot_prev_sum = 0
         while True:
             msg = consumer.poll(timeout=1.0)
             if msg is None: continue
@@ -37,12 +41,50 @@ def basic_consume_loop(consumer, topics):
 
                 connection = happybase.Connection('localhost', 9090)
 
+                # add to aggr daily diff for Etot
+                if(temp_json['m_name'] == 'Etot'):
+                    
+                    # insert appropriate time for aggregations
+                    dt_object = datetime.strptime(str(temp_json["m_timestamp"]), '%Y-%m-%d %H:%M:%S')
+                    dt_object = dt_object.replace(hour=0, minute=0, second=0, microsecond=0)
+                    dt_string = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    table = connection.table(temp_json['m_name']+'_DailyDiff')
+
+                    table.put(f'{dt_string}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
+                                b'cf:datetime': str(dt_string),
+                                b'cf:value' : str(float(temp_json['m_value']) - etot_prev_sum)})
+                    etot_prev_sum += float(temp_json['m_value'])
+                    continue
+                    
+                
+                # add to aggr daily diff for Wtot
+                if(temp_json['m_name'] == 'Wtot'):
+
+                # insert appropriate time for aggregations
+                    dt_object = datetime.strptime(str(temp_json["m_timestamp"]), '%Y-%m-%d %H:%M:%S')
+                    dt_object = dt_object.replace(hour=0, minute=0, second=0, microsecond=0)
+                    dt_string = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+                
+                    table = connection.table(temp_json['m_name']+'_DailyDiff')
+
+                    table.put(f'{dt_string}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
+                                b'cf:datetime': str(dt_string),
+                                b'cf:value' : str(float(temp_json['m_value']) - wtot_prev_sum)})
+                    wtot_prev_sum += float(temp_json['m_value'])
+                    continue
+
                 table = connection.table(temp_json['m_name'] + '_aggr')
 
+                # insert appropriate time for aggregations
+                dt_object = datetime.strptime(str(temp_json['the_timestamp']), '%Y-%m-%d %H:%M:%S')
+                dt_object = dt_object.replace(hour=0, minute=0, second=0, microsecond=0)
+                dt_string = dt_object.strftime('%Y-%m-%d %H:%M:%S')
                 
-                table.put(f'{temp_json["the_timestamp"]}', {b'cf:name': temp_json['m_name'],
-                                b'cf:datetime': str(temp_json['the_timestamp']),
+                table.put(f'{dt_string}', {b'cf:name': temp_json['m_name'],
+                                b'cf:datetime': str(dt_string),
                                 b'cf:value' : str(temp_json['window_daily_values'])})
+
                 
 
                 counter += 1

@@ -3,6 +3,7 @@ import sys
 import socket
 import happybase
 import json
+from datetime import datetime
 
 # TODO: test mode change later and for other tables
 local_conf = {
@@ -28,7 +29,7 @@ tables = {
         "W1" : connection.table('W1_raw'),
         "Wtot" : connection.table('Wtot_raw'),
         "Etot_DailyDiff": connection.table('Etot_DailyDiff'),
-        "Wtot_DailyDiff": connection.table('Wtot_DailyDiff')
+        "Wtot_DailyDiff": connection.table('Wtot_DailyDiff'),
 }
 
 #TODO:(?)implement a way to safely stop the consumer (finally scope) 
@@ -38,8 +39,6 @@ def basic_consume_loop(consumer, topics):
 
 
         counter = 0
-        etot_prev_sum = 0
-        wtot_prev_sum = 0
         while True:
             msg = consumer.poll(timeout=1.0)
             if msg is None: continue
@@ -59,24 +58,7 @@ def basic_consume_loop(consumer, topics):
                 tables[temp_json['m_name']].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name'],
                                 b'cf:datetime': str(temp_json['m_timestamp']),
                                 b'cf:value' : str(temp_json['m_value'])})
-
                 counter += 1
-
-
-                # add to aggr daily diff for Etot
-                if(temp_json['m_name'] == 'Etot'):
-                    tables[temp_json['m_name']+'_DailyDiff'].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
-                                b'cf:datetime': str(temp_json['m_timestamp']),
-                                b'cf:value' : str(float(temp_json['m_value']) - etot_prev_sum)})
-                    etot_prev_sum += float(temp_json['m_value'])
-                
-                # add to aggr daily diff for Wtot
-                if(temp_json['m_name'] == 'Wtot'):
-                    tables[temp_json['m_name']+'_DailyDiff'].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name']+'_DailyDiff',
-                                b'cf:datetime': str(temp_json['m_timestamp']),
-                                b'cf:value' : str(float(temp_json['m_value']) - wtot_prev_sum)})
-                    wtot_prev_sum += float(temp_json['m_value'])
-
     finally:
         # Close down consumer to commit final offsets.
         consumer.close()
