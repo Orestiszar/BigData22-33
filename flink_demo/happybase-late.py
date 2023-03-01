@@ -34,10 +34,13 @@ def basic_consume_loop(consumer, topics):
             else:
                 print(f'Counter: {counter} || Value: {str(msg.value())}')
                 temp_json = json.loads(msg.value())
-                
-                table = connection.table('late_rejected')
 
-                table.put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name'],
+                if(temp_json['m_name'] == "W1_toprocess"):
+                    table = connection.table('late_processed')
+                else:
+                    table = connection.table('late_rejected')
+
+                table.put(f'{temp_json["m_timestamp"]}', {b'cf:name': 'W1',
                                 b'cf:datetime': str(temp_json['m_timestamp']),
                                 b'cf:value' : str(temp_json['m_value'])})
                 counter += 1

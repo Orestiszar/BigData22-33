@@ -14,7 +14,7 @@ for table_name in ["TH1","TH2","HVAC1","HVAC2","MiAC1","MiAC2","MOV1","W1", "Wto
     connection.create_table(table_name +"_aggr", {'cf':dict()})
     print(f'Created table: {table_name}_aggr')
 
-for table_name in ['Etot_DailyDiff', 'Wtot_DailyDiff', 'Wtot_AggDayRest', 'Etot_AggDayRest, late_rejected']:
+for table_name in ['Etot_DailyDiff', 'Wtot_DailyDiff', 'Wtot_AggDayRest', 'Etot_AggDayRest, late_rejected, late_processed']:
     connection.create_table(table_name, {'cf':dict()})
     print(f'Created table: {table_name}')
     
