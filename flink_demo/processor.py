@@ -6,6 +6,8 @@ from pyflink.table import StreamTableEnvironment, EnvironmentSettings, DataTypes
 from pyflink.table.udf import udf
 
 import pandas as pd
+from threading import Thread
+import DataCreation
 
 
 def main():
@@ -46,7 +48,9 @@ def main():
         )
     """
 
+    data_creation_thread = Thread(target = DataCreation.create_data)
     tbl_env.execute_sql(src_ddl)
+    data_creation_thread.start()
 
     # create and initiate loading of source Table
     tbl = tbl_env.from_path('sensor_data')

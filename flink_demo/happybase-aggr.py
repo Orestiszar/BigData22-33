@@ -39,12 +39,11 @@ def basic_consume_loop(consumer, topics):
 
                 table = connection.table(temp_json['m_name'] + '_aggr')
 
-                try:
-                    table.put(f'{temp_json["m_name"]}_{counter}', {b'cf:name': temp_json['m_name'],
-                                    b'cf:datetime': str(temp_json['the_timestamp']),
-                                    b'cf:value' : str(temp_json['window_daily_values'])})
-                except:
-                    print(f'EXCEPTION IN : Counter: {counter} || Value: {str(msg.value())}')
+                
+                table.put(f'{temp_json["the_timestamp"]}', {b'cf:name': temp_json['m_name'],
+                                b'cf:datetime': str(temp_json['the_timestamp']),
+                                b'cf:value' : str(temp_json['window_daily_values'])})
+                
 
                 counter += 1
 

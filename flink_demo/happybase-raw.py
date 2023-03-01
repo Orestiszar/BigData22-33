@@ -48,11 +48,11 @@ def basic_consume_loop(consumer, topics):
                 elif msg.error():
                     raise KafkaException(msg.error())
             else:
-                # print(f'Counter: {counter} || Value: {str(msg.value())}')
+                print(f'Counter: {counter} || Value: {str(msg.value())}')
                 global table
                 temp_json = json.loads(msg.value())
                 
-                tables[temp_json['m_name']].put(f'{temp_json["m_name"]}_{counter}', {b'cf:name': temp_json['m_name'],
+                tables[temp_json['m_name']].put(f'{temp_json["m_timestamp"]}', {b'cf:name': temp_json['m_name'],
                                 b'cf:datetime': str(temp_json['m_timestamp']),
                                 b'cf:value' : str(temp_json['m_value'])})
 
