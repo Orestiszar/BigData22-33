@@ -154,7 +154,7 @@ def main():
 
     sql_raw_data = """
         SELECT
-          m_name,
+          m_name AS m_name,
           m_timestamp,
           m_value
         FROM sensor_data
