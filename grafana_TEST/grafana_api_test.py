@@ -40,7 +40,9 @@ def search():
     'Etot_DailyDiff',
     'Wtot_DailyDiff',
     'Etot_AggDayRest',
-    'Wtot_AggDayRest'
+    'Wtot_AggDayRest',
+    'late_rejected', 
+    'late_processed'
   ])
 
 @app.route('/query', methods=['POST'])
