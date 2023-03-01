@@ -24,12 +24,10 @@ tables = {
         "HVAC2" : connection.table('HVAC2_raw'),
         "MiAC1" : connection.table('MiAC1_raw'),
         "MiAC2" : connection.table('MiAC2_raw'),
-        "Etot" : connection.table('Etot_raw'),
         "MOV1" : connection.table('MOV1_raw'),
         "W1" : connection.table('W1_raw'),
+        "Etot" : connection.table('Etot_raw'),
         "Wtot" : connection.table('Wtot_raw'),
-        "Etot_DailyDiff": connection.table('Etot_DailyDiff'),
-        "Wtot_DailyDiff": connection.table('Wtot_DailyDiff'),
 }
 
 #TODO:(?)implement a way to safely stop the consumer (finally scope) 

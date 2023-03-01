@@ -183,7 +183,6 @@ def main():
           m_value
         FROM sensor_data
         """
-    
 
     ###############################################################
     #        EXECUTE THE QUERIES AND SAVE THEM TO VARIABLES
@@ -200,7 +199,6 @@ def main():
     MOV1_tbl = tbl_env.sql_query(sql_sensor_MOV1)
     ETOT_tbl = tbl_env.sql_query(sql_sensor_ETOT)
     WTOT_tbl = tbl_env.sql_query(sql_sensor_WTOT)
-
     raw_tbl = tbl_env.sql_query(sql_raw_data)
 
     ###############################################################
@@ -247,7 +245,6 @@ def main():
     statement_set.add_insert("daily_values", MOV1_tbl)
     statement_set.add_insert("daily_values", ETOT_tbl)
     statement_set.add_insert("daily_values", WTOT_tbl)
-
 
     # execute the statement set
     statement_set.execute().wait()
