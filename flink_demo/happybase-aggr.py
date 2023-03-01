@@ -83,35 +83,35 @@ def basic_consume_loop(consumer, topics):
 
                 # save aggregations for aggdayrest (TH1 TH2 MOV1 MISSING/NOT NEEDED)
                 if(temp_json['m_name'] == 'Wtot'):
-                    cur_Wtot = float(temp_json['m_value'])
+                    cur_Wtot = float(temp_json['window_daily_values'])
 
                 elif(temp_json['m_name'] == 'W1'):
-                    cur_W1 = float(temp_json['m_value'])
+                    cur_W1 = float(temp_json['window_daily_values'])
                 
                 elif(temp_json['m_name'] == 'Etot'):
-                    cur_Etot = float(temp_json['m_value'])
+                    cur_Etot = float(temp_json['window_daily_values'])
 
                 elif(temp_json['m_name'] == 'HVAC1'):
-                    cur_HVAC1 = float(temp_json['m_value'])
+                    cur_HVAC1 = float(temp_json['window_daily_values'])
 
                 elif(temp_json['m_name'] == 'HVAC2'):
-                    cur_HVAC2 = float(temp_json['m_value'])
+                    cur_HVAC2 = float(temp_json['window_daily_values'])
 
                 elif(temp_json['m_name'] == 'MiAC1'):
-                    cur_MIAC1 = float(temp_json['m_value'])
+                    cur_MIAC1 = float(temp_json['window_daily_values'])
 
                 elif(temp_json['m_name'] == 'MiAC2'):
-                    cur_MIAC2 = float(temp_json['m_value'])
+                    cur_MIAC2 = float(temp_json['window_daily_values'])
 
 
                 # insert appropriate time for aggregations
-                dt_object = datetime.strptime(str(temp_json["m_timestamp"]), '%Y-%m-%d %H:%M:%S')
+                dt_object = datetime.strptime(str(temp_json["the_timestamp"]), '%Y-%m-%d %H:%M:%S')
                 dt_object = dt_object.replace(hour=0, minute=0, second=0, microsecond=0)
                 dt_string = dt_object.strftime('%Y-%m-%d %H:%M:%S')
 
                 if(counter % 9):
                     #AggDayDiff[Etot] - AggDay[HVAC1] - AggDay[HVAC2] - AggDay[MiAC1] - AggDay[MiAC2]
-                    AggDayRestEtot = cur_Etot - cur_HVAC1 - cur_HVAC2 - cur_MIAC1 - cur_MIAC2
+                    AggDayRestEtot = cur_Etot - etot_prev_sum - cur_HVAC1 - cur_HVAC2 - cur_MIAC1 - cur_MIAC2
                     
                     table = connection.table('Etot_AggDayRest')
                     table.put(f'{dt_string}', {b'cf:name': 'Etot_AggDayRest',
@@ -119,7 +119,7 @@ def basic_consume_loop(consumer, topics):
                                 b'cf:value' : str(AggDayRestEtot)})
                     
                     #AggDayDiff[Wtot] – AggDay[W1]
-                    AggDayRestWtot = cur_Wtot - cur_W1
+                    AggDayRestWtot = cur_Wtot - wtot_prev_sum - cur_W1
 
                     table = connection.table('Wtot_AggDayRest')
                     table.put(f'{dt_string}', {b'cf:name': 'Wtot_AggDayRest',
