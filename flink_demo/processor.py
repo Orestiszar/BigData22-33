@@ -152,6 +152,30 @@ def main():
           m_name
     """
 
+    sql_sensor_ETOT = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          MAX(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'Etot'
+        GROUP BY
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
+          m_name
+    """
+
+    sql_sensor_WTOT = """
+        SELECT
+          m_name,
+          MAX(m_timestamp) as the_timestamp,
+          MAX(m_value) AS window_daily_values
+        FROM sensor_data
+        WHERE m_name = 'Wtot'
+        GROUP BY
+          TUMBLE(m_timestamp, INTERVAL '1' DAY),
+          m_name
+    """
+
     sql_raw_data = """
         SELECT
           m_name AS m_name,
@@ -159,7 +183,7 @@ def main():
           m_value
         FROM sensor_data
         """
-
+    
 
     ###############################################################
     #        EXECUTE THE QUERIES AND SAVE THEM TO VARIABLES
@@ -174,10 +198,10 @@ def main():
     MIAC2_tbl = tbl_env.sql_query(sql_sensor_MIAC2)
     W1_tbl = tbl_env.sql_query(sql_sensor_W1)
     MOV1_tbl = tbl_env.sql_query(sql_sensor_MOV1)
-    raw_tbl = tbl_env.sql_query(sql_raw_data)
+    ETOT_tbl = tbl_env.sql_query(sql_sensor_ETOT)
+    WTOT_tbl = tbl_env.sql_query(sql_sensor_WTOT)
 
-    print('\nProcess Sink Schema')
-    # revenue_tbl.print_schema()
+    raw_tbl = tbl_env.sql_query(sql_raw_data)
 
     ###############################################################
     # Create The Kafka Sink Tables
@@ -221,6 +245,9 @@ def main():
     statement_set.add_insert("daily_values", MIAC2_tbl)
     statement_set.add_insert("daily_values", W1_tbl)
     statement_set.add_insert("daily_values", MOV1_tbl)
+    statement_set.add_insert("daily_values", ETOT_tbl)
+    statement_set.add_insert("daily_values", WTOT_tbl)
+
 
     # execute the statement set
     statement_set.execute().wait()
