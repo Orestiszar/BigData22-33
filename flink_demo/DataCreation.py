@@ -88,11 +88,13 @@ while(1):
         kafka_produce({'MOV1' : 1}, tempdate)
 
     # produce required data at the end of each day
-    if(secondcounter%95 == 0 and secondcounter != 0):
+    if(secondcounter%96 == 0 and secondcounter != 0):
         create_data_1day()
         
         random.shuffle(moving_list)
-        kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, date)
+        tempdate_etot = date - datetime.timedelta(minutes=15)
+
+        kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, tempdate_etot)
         
         
     if(secondcounter%20==0 and secondcounter!=0):
