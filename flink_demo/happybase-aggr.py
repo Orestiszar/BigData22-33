@@ -122,7 +122,7 @@ def basic_consume_loop(consumer, topics):
                     AggDayRestWtot = cur_Wtot - cur_W1
 
                     table = connection.table('Wtot_AggDayRest')
-                    table.put(f'{dt_string}', {b'cf:name': 'Wstot_AggDayRest',
+                    table.put(f'{dt_string}', {b'cf:name': 'Wtot_AggDayRest',
                                 b'cf:datetime': str(dt_string),
                                 b'cf:value' : str(AggDayRestWtot)})
                     
