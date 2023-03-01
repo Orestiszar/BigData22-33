@@ -54,13 +54,6 @@
               "viz": false
             },
             "lineInterpolation": "linear",
-            "lineStyle": {
-              "dash": [
-                10,
-                10
-              ],
-              "fill": "dash"
-            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -104,9 +97,6 @@
           "placement": "bottom",
           "showLegend": true
         },
-        "timezone": [
-          "utc"
-        ],
         "tooltip": {
           "mode": "multi",
           "sort": "none"
@@ -418,11 +408,11 @@
           "type": "timeserie"
         }
       ],
-      "title": "Last sensored temperature",
+      "title": "Interval last sensored temperature",
       "type": "gauge"
     }
   ],
-  "refresh": false,
+  "refresh": "5s",
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
@@ -430,8 +420,8 @@
     "list": []
   },
   "time": {
-    "from": "2022-12-31T00:00:00.000Z",
-    "to": "2023-01-19T23:59:59.000Z"
+    "from": "2023-01-01T00:00:00.000Z",
+    "to": "2023-01-03T22:30:00.000Z"
   },
   "timepicker": {
     "refresh_intervals": [
