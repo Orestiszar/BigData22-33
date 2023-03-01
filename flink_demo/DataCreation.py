@@ -97,9 +97,9 @@ while(1):
         kafka_produce({'Etot' : etotenergy, 'Wtot': wtotenergy}, tempdate_etot)
         
         
-    if(secondcounter%20==0 and secondcounter!=0):
-        tempdate_mov = date-datetime.timedelta(days=2)
-        kafka_produce({'W1':np.random.uniform(0,1)}, tempdate_mov, mytopic='input_late')
+    # if(secondcounter%20==0 and secondcounter!=0):
+    #     tempdate_mov = date-datetime.timedelta(days=2)
+    #     kafka_produce({'W1':np.random.uniform(0,1)}, tempdate_mov, mytopic='input_late')
 
     if(secondcounter%120==0 and secondcounter!=0):
         tempdate_mov = date-datetime.timedelta(days=10)

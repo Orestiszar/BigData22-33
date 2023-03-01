@@ -14,8 +14,6 @@ local_conf = {
 
 consumer = Consumer(local_conf)
 
-
-#TODO:(?)implement a way to safely stop the consumer (finally scope) 
 def basic_consume_loop(consumer, topics):
     try:
         consumer.subscribe(topics)
